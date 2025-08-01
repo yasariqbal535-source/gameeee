@@ -10,22 +10,33 @@ let pipes = [];
 let score = 0;
 let gameRunning = false;
 let gameOver = false;
+let pipeInterval = null;
 
-function resetGame() {
+// Start the game
+function startGame() {
+  gameRunning = true;
+  gameOver = false;
+  homeScreen.style.display = 'none';
   birdY = 200;
   birdVelocity = 0;
   pipes = [];
   score = 0;
+
+  if (pipeInterval) clearInterval(pipeInterval);
+  pipeInterval = setInterval(() => {
+    if (gameRunning) spawnPipe();
+  }, 1500);
+}
+
+// Restart after game over
+function resetGame() {
   gameRunning = false;
   gameOver = false;
   homeScreen.style.display = 'flex';
+  if (pipeInterval) clearInterval(pipeInterval);
 }
 
-function startGame() {
-  gameRunning = true;
-  homeScreen.style.display = 'none';
-}
-
+// Handle keypress
 document.addEventListener('keydown', (e) => {
   if (e.code === 'Space') {
     if (!gameRunning && !gameOver) {
@@ -37,6 +48,9 @@ document.addEventListener('keydown', (e) => {
     }
   }
 });
+
+// Also expose startGame for the button click
+window.startGame = startGame;
 
 function spawnPipe() {
   const top = Math.floor(Math.random() * 200) + 50;
@@ -51,6 +65,7 @@ function update() {
 
   if (birdY > canvas.height || birdY < 0) {
     gameOver = true;
+    gameRunning = false;
   }
 
   pipes.forEach(pipe => {
@@ -61,6 +76,7 @@ function update() {
       (birdY < pipe.top || birdY > pipe.top + 100)
     ) {
       gameOver = true;
+      gameRunning = false;
     }
 
     if (pipe.x === 25) score++;
@@ -104,10 +120,6 @@ function gameLoop() {
   draw();
   requestAnimationFrame(gameLoop);
 }
-
-setInterval(() => {
-  if (gameRunning && !gameOver) spawnPipe();
-}, 1500);
 
 resetGame();
 gameLoop();
