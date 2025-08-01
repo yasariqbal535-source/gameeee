@@ -1,8 +1,6 @@
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 const homeScreen = document.getElementById('homeScreen');
-const scoreboard = document.getElementById('scoreboard');
-const scoreList = document.getElementById('scoreList');
 const flapSound = document.getElementById('flapSound');
 const hitSound = document.getElementById('hitSound');
 
@@ -22,7 +20,6 @@ function startGame() {
   gameRunning = true;
   gameOver = false;
   homeScreen.style.display = 'none';
-  scoreboard.style.display = 'none';
   document.getElementById('continueOptions').style.display = 'none';
   document.getElementById('adOverlay').style.display = 'none';
   birdY = 200;
@@ -34,22 +31,10 @@ function startGame() {
   pipeInterval = setInterval(spawnPipe, 1800);
 }
 
-function resetGame() {
-  gameRunning = false;
-  gameOver = false;
-  homeScreen.style.display = 'flex';
-  scoreboard.style.display = 'none';
-  document.getElementById('continueOptions').style.display = 'none';
-  document.getElementById('adOverlay').style.display = 'none';
-  if (pipeInterval) clearInterval(pipeInterval);
-}
-
 function flap() {
   if (!gameRunning && !gameOver) {
     startGame();
-  } else if (gameOver) {
-    // Nothing
-  } else {
+  } else if (!gameOver) {
     birdVelocity = flapStrength;
     if (flapSound) flapSound.play();
   }
@@ -105,4 +90,67 @@ function draw() {
   ctx.fillStyle = 'green';
   pipes.forEach(pipe => {
     ctx.fillRect(pipe.x, 0, 30, pipe.top);
-    ctx.f
+    ctx.fillRect(pipe.x, pipe.top + 140, 30, canvas.height);
+  });
+
+  ctx.fillStyle = 'yellow';
+  ctx.beginPath();
+  ctx.arc(50, birdY, 12, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = 'black';
+  ctx.font = '20px sans-serif';
+  ctx.fillText('Score: ' + score, 10, 25);
+}
+
+function gameLoop() {
+  update();
+  draw();
+  requestAnimationFrame(gameLoop);
+}
+
+function triggerContinueOptions() {
+  savedState = {
+    birdY,
+    birdVelocity,
+    pipes: JSON.parse(JSON.stringify(pipes)),
+    score
+  };
+  gameOver = true;
+  gameRunning = false;
+  document.getElementById('continueOptions').style.display = 'flex';
+}
+
+function watchAd() {
+  document.getElementById('continueOptions').style.display = 'none';
+  const adOverlay = document.getElementById('adOverlay');
+  adOverlay.style.display = 'flex';
+  let countdown = 5;
+  const countdownText = document.getElementById('adCountdown');
+  countdownText.textContent = countdown;
+
+  const adTimer = setInterval(() => {
+    countdown--;
+    countdownText.textContent = countdown;
+    if (countdown === 0) {
+      clearInterval(adTimer);
+      adOverlay.style.display = 'none';
+      resumeGame();
+    }
+  }, 1000);
+}
+
+function resumeGame() {
+  if (savedState) {
+    birdY = savedState.birdY;
+    birdVelocity = savedState.birdVelocity;
+    pipes = savedState.pipes;
+    score = savedState.score;
+    savedState = null;
+  }
+  gameOver = false;
+  gameRunning = true;
+}
+
+window.startGame = startGame;
+gameLoop();
