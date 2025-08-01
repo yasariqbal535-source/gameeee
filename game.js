@@ -1,5 +1,6 @@
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
+const homeScreen = document.getElementById('homeScreen');
 
 let birdY = 200;
 let birdVelocity = 0;
@@ -17,17 +18,18 @@ function resetGame() {
   score = 0;
   gameRunning = false;
   gameOver = false;
+  homeScreen.style.display = 'flex';
 }
 
-function spawnPipe() {
-  const top = Math.floor(Math.random() * 200) + 50;
-  pipes.push({ x: canvas.width, top });
+function startGame() {
+  gameRunning = true;
+  homeScreen.style.display = 'none';
 }
 
 document.addEventListener('keydown', (e) => {
   if (e.code === 'Space') {
     if (!gameRunning && !gameOver) {
-      gameRunning = true;
+      startGame();
     } else if (gameOver) {
       resetGame();
     } else {
@@ -35,6 +37,11 @@ document.addEventListener('keydown', (e) => {
     }
   }
 });
+
+function spawnPipe() {
+  const top = Math.floor(Math.random() * 200) + 50;
+  pipes.push({ x: canvas.width, top });
+}
 
 function update() {
   if (!gameRunning || gameOver) return;
@@ -49,7 +56,6 @@ function update() {
   pipes.forEach(pipe => {
     pipe.x -= 2;
 
-    // Collision
     if (
       pipe.x < 60 && pipe.x + 30 > 40 &&
       (birdY < pipe.top || birdY > pipe.top + 100)
@@ -66,32 +72,23 @@ function update() {
 function draw() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  // Background
   ctx.fillStyle = '#87CEEB';
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-  // Pipes
   ctx.fillStyle = 'green';
   pipes.forEach(pipe => {
     ctx.fillRect(pipe.x, 0, 30, pipe.top);
     ctx.fillRect(pipe.x, pipe.top + 100, 30, canvas.height);
   });
 
-  // Bird
   ctx.fillStyle = 'yellow';
   ctx.beginPath();
   ctx.arc(50, birdY, 10, 0, Math.PI * 2);
   ctx.fill();
 
-  // Score
   ctx.fillStyle = 'black';
   ctx.font = '20px sans-serif';
   ctx.fillText('Score: ' + score, 10, 25);
-
-  // Start / Game Over text
-  if (!gameRunning && !gameOver) {
-    ctx.fillText('Press Space to Start', 60, 200);
-  }
 
   if (gameOver) {
     ctx.fillStyle = 'red';
