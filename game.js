@@ -4,13 +4,14 @@ const homeScreen = document.getElementById('homeScreen');
 
 let birdY = 200;
 let birdVelocity = 0;
-let gravity = 0.5;
-let flapStrength = -8;
+let gravity = 0.3; // Easier gravity
+let flapStrength = -6; // Stronger flap
 let pipes = [];
 let score = 0;
 let gameRunning = false;
 let gameOver = false;
 let pipeInterval = null;
+let pipeSpeed = 1.5; // Slower pipes
 
 function startGame() {
   gameRunning = true;
@@ -24,7 +25,7 @@ function startGame() {
   if (pipeInterval) clearInterval(pipeInterval);
   pipeInterval = setInterval(() => {
     if (gameRunning) spawnPipe();
-  }, 1500);
+  }, 1800); // More time between pipes
 }
 
 function resetGame() {
@@ -49,8 +50,8 @@ document.addEventListener('keydown', (e) => {
 window.startGame = startGame;
 
 function spawnPipe() {
-  const top = Math.floor(Math.random() * 200) + 50;
-  pipes.push({ x: canvas.width, top });
+  const top = Math.floor(Math.random() * 180) + 40;
+  pipes.push({ x: canvas.width, top, scored: false });
 }
 
 function update() {
@@ -65,17 +66,19 @@ function update() {
   }
 
   pipes.forEach(pipe => {
-    pipe.x -= 2;
+    pipe.x -= pipeSpeed;
 
+    // Collision detection
     if (
-      pipe.x < 60 && pipe.x + 30 > 40 &&
-      (birdY < pipe.top || birdY > pipe.top + 100)
+      pipe.x < 80 && pipe.x + 30 > 40 && // bird x-range = 40–60
+      (birdY < pipe.top || birdY > pipe.top + 140) // Wider pipe gap
     ) {
       gameOver = true;
       gameRunning = false;
     }
 
-    if (!pipe.scored && pipe.x + 30 < 50) {
+    // Scoring
+    if (!pipe.scored && pipe.x + 30 < 40) {
       pipe.scored = true;
       score++;
     }
@@ -90,21 +93,25 @@ function draw() {
   ctx.fillStyle = '#87CEEB';
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
+  // Pipes
   ctx.fillStyle = 'green';
   pipes.forEach(pipe => {
     ctx.fillRect(pipe.x, 0, 30, pipe.top);
-    ctx.fillRect(pipe.x, pipe.top + 100, 30, canvas.height);
+    ctx.fillRect(pipe.x, pipe.top + 140, 30, canvas.height); // Bigger gap
   });
 
+  // Bird
   ctx.fillStyle = 'yellow';
   ctx.beginPath();
-  ctx.arc(50, birdY, 10, 0, Math.PI * 2);
+  ctx.arc(50, birdY, 12, 0, Math.PI * 2); // Bigger bird
   ctx.fill();
 
+  // Score
   ctx.fillStyle = 'black';
   ctx.font = '20px sans-serif';
   ctx.fillText('Score: ' + score, 10, 25);
 
+  // Game Over
   if (gameOver) {
     ctx.fillStyle = 'red';
     ctx.font = '30px sans-serif';
