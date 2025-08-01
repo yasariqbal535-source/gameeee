@@ -20,15 +20,15 @@ function startGame() {
   gameOver = false;
   homeScreen.style.display = 'none';
   scoreboard.style.display = 'none';
+  document.getElementById('continueOptions').style.display = 'none';
+  document.getElementById('adOverlay').style.display = 'none';
   birdY = 200;
   birdVelocity = 0;
   pipes = [];
   score = 0;
 
   if (pipeInterval) clearInterval(pipeInterval);
-  pipeInterval = setInterval(() => {
-    if (gameRunning) spawnPipe();
-  }, 1800);
+  pipeInterval = setInterval(spawnPipe, 1800);
 }
 
 function resetGame() {
@@ -36,6 +36,8 @@ function resetGame() {
   gameOver = false;
   homeScreen.style.display = 'flex';
   scoreboard.style.display = 'none';
+  document.getElementById('continueOptions').style.display = 'none';
+  document.getElementById('adOverlay').style.display = 'none';
   if (pipeInterval) clearInterval(pipeInterval);
 }
 
@@ -65,7 +67,7 @@ function update() {
   birdY += birdVelocity;
 
   if (birdY > canvas.height || birdY < 0) {
-    endGame();
+    triggerContinueOptions();
   }
 
   pipes.forEach(pipe => {
@@ -75,7 +77,7 @@ function update() {
       pipe.x < 80 && pipe.x + 30 > 40 &&
       (birdY < pipe.top || birdY > pipe.top + 140)
     ) {
-      endGame();
+      triggerContinueOptions();
     }
 
     const birdFront = 50;
@@ -86,12 +88,11 @@ function update() {
     }
   });
 
-  pipes = pipes.filter(p => p.x > -50);
+  pipes = pipes.filter(p => pipe.x > -50);
 }
 
 function draw() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-
   ctx.fillStyle = '#87CEEB';
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
@@ -109,14 +110,6 @@ function draw() {
   ctx.fillStyle = 'black';
   ctx.font = '20px sans-serif';
   ctx.fillText('Score: ' + score, 10, 25);
-
-  if (gameOver) {
-    ctx.fillStyle = 'red';
-    ctx.font = '30px sans-serif';
-    ctx.fillText('Game Over', 90, 200);
-    ctx.font = '20px sans-serif';
-    ctx.fillText('Press Space to Restart', 65, 240);
-  }
 }
 
 function gameLoop() {
@@ -125,33 +118,34 @@ function gameLoop() {
   requestAnimationFrame(gameLoop);
 }
 
-function endGame() {
+function triggerContinueOptions() {
   gameOver = true;
   gameRunning = false;
-  setTimeout(() => {
-    const name = prompt("Game Over! Enter your name:") || "Anonymous";
-    saveScore(name, score);
-    displayScores();
-  }, 300);
+  document.getElementById('continueOptions').style.display = 'flex';
 }
 
-function saveScore(name, score) {
-  const scores = JSON.parse(localStorage.getItem("highscores") || "[]");
-  scores.push({ name, score });
-  scores.sort((a, b) => b.score - a.score);
-  localStorage.setItem("highscores", JSON.stringify(scores.slice(0, 5)));
+function watchAd() {
+  document.getElementById('continueOptions').style.display = 'none';
+  const adOverlay = document.getElementById('adOverlay');
+  adOverlay.style.display = 'flex';
+  let countdown = 5;
+  const countdownText = document.getElementById('adCountdown');
+  countdownText.textContent = countdown;
+
+  const adTimer = setInterval(() => {
+    countdown--;
+    countdownText.textContent = countdown;
+    if (countdown === 0) {
+      clearInterval(adTimer);
+      adOverlay.style.display = 'none';
+      gameOver = false;
+      gameRunning = true;
+    }
+  }, 1000);
 }
 
-function displayScores() {
-  const scores = JSON.parse(localStorage.getItem("highscores") || "[]");
-  scoreList.innerHTML = "";
-  scores.forEach(s => {
-    const li = document.createElement("li");
-    li.textContent = `${s.name}: ${s.score}`;
-    scoreList.appendChild(li);
-  });
-  scoreboard.style.display = "block";
-}
-
-resetGame();
-gameLoop();
+function confirmQuit() {
+  const name = prompt("Game Over! Enter your name:") || "Anonymous";
+  saveScore(name, score);
+  displayScores();
+  document.getElementById('continueOptions').style.display
