@@ -148,4 +148,27 @@ function confirmQuit() {
   const name = prompt("Game Over! Enter your name:") || "Anonymous";
   saveScore(name, score);
   displayScores();
-  document.getElementById('continueOptions').style.display
+  document.getElementById('continueOptions').style.display = 'none';
+  scoreboard.style.display = 'block';
+}
+
+function saveScore(name, score) {
+  const scores = JSON.parse(localStorage.getItem("highscores") || "[]");
+  scores.push({ name, score });
+  scores.sort((a, b) => b.score - a.score);
+  localStorage.setItem("highscores", JSON.stringify(scores.slice(0, 5)));
+}
+
+function displayScores() {
+  const scores = JSON.parse(localStorage.getItem("highscores") || "[]");
+  scoreList.innerHTML = "";
+  scores.forEach(s => {
+    const li = document.createElement("li");
+    li.textContent = `${s.name}: ${s.score}`;
+    scoreList.appendChild(li);
+  });
+  scoreboard.style.display = "block";
+}
+
+resetGame();
+gameLoop();
