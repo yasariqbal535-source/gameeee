@@ -12,7 +12,6 @@ let gameRunning = false;
 let gameOver = false;
 let pipeInterval = null;
 
-// Start the game
 function startGame() {
   gameRunning = true;
   gameOver = false;
@@ -28,7 +27,6 @@ function startGame() {
   }, 1500);
 }
 
-// Restart after game over
 function resetGame() {
   gameRunning = false;
   gameOver = false;
@@ -36,7 +34,6 @@ function resetGame() {
   if (pipeInterval) clearInterval(pipeInterval);
 }
 
-// Handle keypress
 document.addEventListener('keydown', (e) => {
   if (e.code === 'Space') {
     if (!gameRunning && !gameOver) {
@@ -49,7 +46,6 @@ document.addEventListener('keydown', (e) => {
   }
 });
 
-// Also expose startGame for the button click
 window.startGame = startGame;
 
 function spawnPipe() {
@@ -79,7 +75,10 @@ function update() {
       gameRunning = false;
     }
 
-    if (pipe.x === 25) score++;
+    if (!pipe.scored && pipe.x + 30 < 50) {
+      pipe.scored = true;
+      score++;
+    }
   });
 
   pipes = pipes.filter(p => p.x > -50);
