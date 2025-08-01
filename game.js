@@ -1,103 +1,173 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <title>Flappy Clone</title>
-  <style>
-    body {
-      margin: 0;
-      background: #87CEEB;
-      font-family: sans-serif;
-      display: flex;
-      flex-direction: row;
-      justify-content: center;
-      align-items: flex-start;
-      height: 100vh;
-    }
-    #leaderboard-wrapper {
-      width: 200px;
-      padding: 10px;
-      color: white;
-    }
-    #scoreboard {
-      text-align: left;
-    }
-    #scoreList {
-      list-style: none;
-      padding-left: 0;
-      font-size: 16px;
-    }
-    #homeScreen {
-      position: fixed;
-      top: 0; left: 0;
-      width: 100vw; height: 100vh;
-      background: rgba(0,0,0,0.6);
-      color: white;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      z-index: 10;
-    }
-    #homeScreen button {
-      padding: 10px 20px;
-      font-size: 1.2em;
-      cursor: pointer;
-    }
-    canvas {
-      background: #87CEEB;
-    }
-    #adOverlay, #continueOptions {
-      position: fixed;
-      top: 0; left: 0;
-      width: 100vw; height: 100vh;
-      display: none;
-      align-items: center;
-      justify-content: center;
-      flex-direction: column;
-      color: white;
-      z-index: 20;
-    }
-    #adOverlay {
-      background: black;
-    }
-    #continueOptions {
-      background: rgba(0, 0, 0, 0.6);
-      z-index: 15;
-    }
-    button {
-      margin: 5px;
-      padding: 10px 15px;
-    }
-  </style>
-</head>
-<body>
-  <div id="homeScreen">
-    <h1>Flappy Clone</h1>
-    <p>Press Space or Click Start</p>
-    <button onclick="startGame()">Start</button>
-  </div>
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+const homeScreen = document.getElementById('homeScreen');
+const scoreboard = document.getElementById('scoreboard');
+const scoreList = document.getElementById('scoreList');
 
-  <div id="leaderboard-wrapper">
-    <div id="scoreboard" style="display:none;">
-      <h2>Leaderboard</h2>
-      <ul id="scoreList"></ul>
-    </div>
-  </div>
+let birdY = 200;
+let birdVelocity = 0;
+let gravity = 0.3;
+let flapStrength = -6;
+let pipes = [];
+let score = 0;
+let gameRunning = false;
+let gameOver = false;
+let pipeInterval = null;
+let pipeSpeed = 1.5;
 
-  <canvas id="gameCanvas" width="320" height="480"></canvas>
+function startGame() {
+  gameRunning = true;
+  gameOver = false;
+  homeScreen.style.display = 'none';
+  scoreboard.style.display = 'none';
+  document.getElementById('continueOptions').style.display = 'none';
+  document.getElementById('adOverlay').style.display = 'none';
+  birdY = 200;
+  birdVelocity = 0;
+  pipes = [];
+  score = 0;
 
-  <div id="adOverlay">
-    <p>Playing ad... please wait</p>
-    <p id="adCountdown">5</p>
-  </div>
+  if (pipeInterval) clearInterval(pipeInterval);
+  pipeInterval = setInterval(spawnPipe, 1800);
+}
 
-  <div id="continueOptions">
-    <h2>Game Over</h2>
-    <button onclick="watchAd()">Watch Ad to Continue</button>
-    <button onclick="confirmQuit()">Quit</button>
-  </div>
+function resetGame() {
+  gameRunning = false;
+  gameOver = false;
+  homeScreen.style.display = 'flex';
+  scoreboard.style.display = 'none';
+  document.getElementById('continueOptions').style.display = 'none';
+  document.getElementById('adOverlay').style.display = 'none';
+  if (pipeInterval) clearInterval(pipeInterval);
+}
 
-  <script src="game.js"></script>
-</body>
-</html>
+document.addEventListener('keydown', (e) => {
+  if (e.code === 'Space') {
+    if (!gameRunning && !gameOver) {
+      startGame();
+    } else if (gameOver) {
+      resetGame();
+    } else {
+      birdVelocity = flapStrength;
+    }
+  }
+});
+
+function spawnPipe() {
+  const top = Math.floor(Math.random() * 180) + 40;
+  pipes.push({ x: canvas.width, top, scored: false });
+}
+
+function update() {
+  if (!gameRunning || gameOver) return;
+
+  birdVelocity += gravity;
+  birdY += birdVelocity;
+
+  if (birdY > canvas.height || birdY < 0) {
+    triggerContinueOptions();
+  }
+
+  pipes.forEach(pipe => {
+    pipe.x -= pipeSpeed;
+
+    if (
+      pipe.x < 80 && pipe.x + 30 > 40 &&
+      (birdY < pipe.top || birdY > pipe.top + 140)
+    ) {
+      triggerContinueOptions();
+    }
+
+    const birdFront = 50;
+    const pipeBack = pipe.x + 30;
+    if (!pipe.scored && pipeBack < birdFront) {
+      score++;
+      pipe.scored = true;
+    }
+  });
+
+  pipes = pipes.filter(pipe => pipe.x > -50);
+}
+
+function draw() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = '#87CEEB';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  ctx.fillStyle = 'green';
+  pipes.forEach(pipe => {
+    ctx.fillRect(pipe.x, 0, 30, pipe.top);
+    ctx.fillRect(pipe.x, pipe.top + 140, 30, canvas.height);
+  });
+
+  ctx.fillStyle = 'yellow';
+  ctx.beginPath();
+  ctx.arc(50, birdY, 12, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = 'black';
+  ctx.font = '20px sans-serif';
+  ctx.fillText('Score: ' + score, 10, 25);
+}
+
+function gameLoop() {
+  update();
+  draw();
+  requestAnimationFrame(gameLoop);
+}
+
+function triggerContinueOptions() {
+  gameOver = true;
+  gameRunning = false;
+  document.getElementById('continueOptions').style.display = 'flex';
+}
+
+function watchAd() {
+  document.getElementById('continueOptions').style.display = 'none';
+  const adOverlay = document.getElementById('adOverlay');
+  adOverlay.style.display = 'flex';
+  let countdown = 5;
+  const countdownText = document.getElementById('adCountdown');
+  countdownText.textContent = countdown;
+
+  const adTimer = setInterval(() => {
+    countdown--;
+    countdownText.textContent = countdown;
+    if (countdown === 0) {
+      clearInterval(adTimer);
+      adOverlay.style.display = 'none';
+      gameOver = false;
+      gameRunning = true;
+    }
+  }, 1000);
+}
+
+function confirmQuit() {
+  const name = prompt("Game Over! Enter your name:") || "Anonymous";
+  saveScore(name, score);
+  displayScores();
+  document.getElementById('continueOptions').style.display = 'none';
+  scoreboard.style.display = 'block';
+}
+
+function saveScore(name, score) {
+  const scores = JSON.parse(localStorage.getItem("highscores") || "[]");
+  scores.push({ name, score });
+  scores.sort((a, b) => b.score - a.score);
+  localStorage.setItem("highscores", JSON.stringify(scores.slice(0, 5)));
+}
+
+function displayScores() {
+  const scores = JSON.parse(localStorage.getItem("highscores") || "[]");
+  scoreList.innerHTML = "";
+  scores.forEach(s => {
+    const li = document.createElement("li");
+    li.textContent = `${s.name}: ${s.score}`;
+    scoreList.appendChild(li);
+  });
+  scoreboard.style.display = "block";
+}
+
+window.startGame = startGame; // <- CRITICAL: exposes to HTML
+resetGame();
+gameLoop();
