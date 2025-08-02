@@ -38,9 +38,12 @@ function resetGame() {
   birdVelocity = 0;
   pipes = [];
   score = 0;
+  savedState = null;
+
   document.getElementById('continueOptions').style.display = 'none';
   document.getElementById('adOverlay').style.display = 'none';
   homeScreen.style.display = 'flex';
+
   if (pipeInterval) clearInterval(pipeInterval);
 }
 
