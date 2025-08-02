@@ -31,6 +31,19 @@ function startGame() {
   pipeInterval = setInterval(spawnPipe, 1800);
 }
 
+function resetGame() {
+  gameRunning = false;
+  gameOver = false;
+  birdY = 200;
+  birdVelocity = 0;
+  pipes = [];
+  score = 0;
+  document.getElementById('continueOptions').style.display = 'none';
+  document.getElementById('adOverlay').style.display = 'none';
+  homeScreen.style.display = 'flex';
+  if (pipeInterval) clearInterval(pipeInterval);
+}
+
 function flap() {
   if (!gameRunning && !gameOver) {
     startGame();
